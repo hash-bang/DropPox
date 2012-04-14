@@ -46,12 +46,17 @@ sub dp_open {
 	$file = $realfs . $file;
 	return -ENOENT() unless -f $file; # Exists?
 
-	return 0;
+	local *FH;
+	#sysopen FH, $file, $flags or return -ENOENT();
+	open FH, $file or return -ENOENT();
+	binmode FH;
+	return *FH;
 }
 
 sub dp_release {
-	my $file = shift;
+	my ($file, $fh) = @_;
 	say "RELEASE $file" if DEBUG;
+	close $fh;
 
 	return 0;
 }
@@ -63,10 +68,8 @@ sub dp_read {
 	$file = $realfs . $file;
 	return -ENOENT() unless -f $file; # Exists?
 
-	open FILE, '<', $file;
-	seek FILE, $offset, 0;
-	read FILE, $data, $buf;
-	close FILE;
+	seek $fh, $offset, 0;
+	read $fh, $data, $buf;
 
 	return $data;
 }
@@ -77,10 +80,8 @@ sub dp_write {
 	say "WRITE $file (@ $offset)" if DEBUG;
 	$file = $realfs . $file;
 
-	open FILE, '>', $file;
-	seek FILE, $offset, 0;
-	print FILE $data;
-	close FILE;
+	seek $fh, $offset, 0;
+	print $fh $data;
 
 	return length($data);
 }
@@ -90,6 +91,8 @@ sub dp_flush {
 	my ($file, $fh) = @_;
 	say "FLUSH $file" if DEBUG;
 	$file = $realfs . $file;
+
+	# FIXME: Do nothing?
 	return 0;
 }
 
@@ -99,10 +102,9 @@ sub dp_create {
 	say "CREATE $file (Mask: $mask)" if DEBUG;
 	$file = $realfs . $file;
 
-	open FILE, '>:raw', $file;
-	close FILE;
+	open $fh, '>:raw', $file or return -ENOENT();
 
-	return 0;
+	return $fh;
 }
 
 sub dp_chown {
@@ -144,7 +146,7 @@ Fuse::main(
 	write => 'main::dp_write',
 	chown => 'main::dp_chown',
 	chmod => 'main::dp_chmod',
-	flush => 'main::dp_flush',
+#	flush => 'main::dp_flush',
 	threaded => 0,
 	debug => DEBUG
 	#readlink
