@@ -4,7 +4,7 @@
 
 DropPox
 =======
-A Fuse mount point fixup various issues with Dropbox on Linux systems.
+A Fuse mount point to fix various issues with Dropbox on Linux systems.
 
 
 Installation
