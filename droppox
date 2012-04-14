@@ -1,0 +1,177 @@
+#!/usr/bin/perl -w
+use Data::Dumper;
+use File::Spec;
+use Filesys::Statvfs;
+use feature qw(say);
+
+#use blib;
+use Fuse qw(fuse_get_context);
+use POSIX qw(ENOENT EISDIR EINVAL);
+
+sub DEBUG () { 1 }
+
+sub dp_getdir {
+	our $realfs;
+	my $dir = shift;
+	say "GETDIR: $dir" if DEBUG;
+	$dir = $realfs . $dir;
+	return -ENOENT() unless -d $dir; # Exists?
+
+	opendir(my $dh, $dir) or die "can't opendir $dir: $!";
+	@items = readdir($dh);
+	closedir $dh;
+
+	return @items,0;
+}
+
+sub dp_getattr {
+	our $realfs;
+	my $file = shift;
+	say "GETATTR: $file" if DEBUG;
+	$file = $realfs . $file;
+	return -ENOENT() unless -e $file; # Exists?
+
+	return stat($file);
+}
+
+sub dp_statfs {
+	our $realfs;
+	say "STATFS" if DEBUG;
+	return statvfs($realfs);
+}
+
+sub dp_open {
+	my ($file, $flags, $info) = @_;
+	say "OPEN $file" if DEBUG;
+	$file = $realfs . $file;
+	return -ENOENT() unless -f $file; # Exists?
+
+	return 0;
+}
+
+sub dp_release {
+	my $file = shift;
+	say "RELEASE $file" if DEBUG;
+
+	return 0;
+}
+
+sub dp_read {
+	our $realfs;
+	my ($file, $buf, $offset, $fh) = @_;
+	say "READ $file (BUF=$buf @ $offset)" if DEBUG;
+	$file = $realfs . $file;
+	return -ENOENT() unless -f $file; # Exists?
+
+	open FILE, '<', $file;
+	seek FILE, $offset, 0;
+	read FILE, $data, $buf;
+	close FILE;
+
+	return $data;
+}
+
+sub dp_write {
+	our $realfs;
+	my ($file, $data, $offset, $fh) = @_;
+	say "WRITE $file (@ $offset)" if DEBUG;
+	$file = $realfs . $file;
+
+	open FILE, '>', $file;
+	seek FILE, $offset, 0;
+	print FILE $data;
+	close FILE;
+
+	return length($data);
+}
+
+sub dp_flush {
+	our $realfs;
+	my ($file, $fh) = @_;
+	say "FLUSH $file" if DEBUG;
+	$file = $realfs . $file;
+	return 0;
+}
+
+sub dp_create {
+	our $realfs;
+	my ($file, $mask) = @_;
+	say "CREATE $file (Mask: $mask)" if DEBUG;
+	$file = $realfs . $file;
+
+	open FILE, '>:raw', $file;
+	close FILE;
+
+	return 0;
+}
+
+sub dp_chown {
+	our $realfs;
+	my ($file, $uid, $gid) = @_;
+	say "CHOWN $file (UID: $uid, GID: $gid)" if DEBUG;
+	$file = $realfs . $file;
+
+	chown $uid, $gid, $file or return -ENOENT();
+	return 0;
+}
+
+sub dp_chmod {
+	our $realfs;
+	my ($file, $mod) = @_;
+	say "CHMOD $file (Mod: $mod)" if DEBUG;
+	$file = $realfs . $file;
+
+	chmod $mod, $file or return -ENOENT();
+	return 0;
+}
+
+our $realfs = shift or die 'No source file system specified';
+our $fakefs = shift or die 'No mount point specified';
+$fakefs = File::Spec->rel2abs($fakefs); # Convert to absolute path
+$realfs = File::Spec->rel2abs($realfs);
+
+say "Fake [$fakefs]";
+say "Real [$realfs]";
+Fuse::main(
+	mountpoint => $fakefs,
+	getattr => 'main::dp_getattr',
+	getdir => 'main::dp_getdir',
+	open => 'main::dp_open',
+	release => 'main::dp_release',
+	statfs => 'main::dp_statfs',
+	create => 'main::dp_create',
+	read => 'main::dp_read',
+	write => 'main::dp_write',
+	chown => 'main::dp_chown',
+	chmod => 'main::dp_chmod',
+	flush => 'main::dp_flush',
+	threaded => 0,
+	debug => DEBUG
+	#readlink
+	#mknod
+	#mkdir
+	#unlink
+	#rmdir
+	#symlink
+	#rename
+	#link
+	#truncate
+	#utime
+	#fsync
+	#setxattr
+	#getxattr
+	#listxattr
+	#removexattr
+	#opendir
+	#readdir
+	#releasedir
+	#fsyncdir
+	#init
+	#destroy
+	#access
+	#ftruncate
+	#fgetattr
+	#lock
+	#utimens
+	#bmap
+);
