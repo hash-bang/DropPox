@@ -1,0 +1,28 @@
+-= Disable Lid actions =-
+ALT+F2 and type gconf-editor
+Then browse to apps/gnome-power-manager/buttons and change the lid_ac value to "nothing" without quotes.
+
+-= General PPA adds (paste ready) =-
+# Compiz
+sudo add-apt-repository ppa:compiz
+
+# Bitcoin
+sudo apt-add-repository ppa:stretch/bitcoin
+
+# Unison-gtk
+sudo apt-add-repository ppa:abelcheung/unison
+
+# Mplayer
+sudo apt-add-repository ppa:rvm/mplayer
+
+# Vim
+sudo apt-add-repository ppa:passy/vim
+
+# Cinnamon
+sudo add-apt-repository ppa:merlwiz79/cinnamon-ppa
+
+# ipeth-utilities - IPhone tethering
+sudo add-apt-repository ppa:pmcenery/ppa
+
+# Libreoffice
+sudo add-apt-repository ppa:libreoffice/ppa
