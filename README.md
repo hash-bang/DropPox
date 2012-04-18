@@ -12,4 +12,4 @@ Installation
 Run the following in a terminal:
 
 	sudo apt-get install libfuse-dev
-	sudo cpan fuse
+	sudo cpan Fuse
