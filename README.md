@@ -14,9 +14,10 @@ Run the following in a terminal:
 	sudo apt-get install libfuse-dev
 	sudo cpan Fuse
 
-
 TODO
 ====
+* __Hide files__ - A list of file globs to be hidden from Dropbox while syncing
+* __Faster startup__ - Possibly by keeping an 'image' of the file system in memory so when Dropbox boots the first time and reads the DropPox FS it is actually given a fake FS. This should prevent Dropbox from hashing everying on first start.
 * Special file containing the last 'n' number of files updated - so you can see what files Dropbox is currently syncing
 * Ignore file filters e.g. '*.tmp'
 * Flatten Symlinks
